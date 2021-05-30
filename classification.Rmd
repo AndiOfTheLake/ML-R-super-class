@@ -100,6 +100,8 @@ mean(k_15 == signs_actual)
 
 ## Seeing how the neighbors voted
 
+To see which predictions are close(r) to unanimous.
+
 ```{r}
 # Use the prob parameter to get the proportion of votes for the winning class
 sign_pred <- knn(train = signs[-1], test = signs_test[-1], cl = sign_types, prob = TRUE, k = 7)
@@ -112,5 +114,39 @@ head(sign_pred)
 
 # Examine the proportion of votes for the winning class
 head(sign_prob)
+```
+
+## Data preparation for kNN
+
+normalization
+
+## Understanding Bayesian methods
+
+```{r}
+library(naivebayes)
+```
+
+## Computing probabilities
+
+```{r}
+where9am<-read.csv("where9am.csv")
+str(where9am)
+str(where9am$daytype)
+str(where9am$location)
+table(where9am$daytype)
+table(where9am$location)
+
+# Compute P(A) 
+p_A <- nrow(subset(where9am, location == "office"))/nrow(where9am)
+
+# Compute P(B)
+p_B <- nrow(subset(where9am, daytype == "weekday"))/nrow(where9am)
+
+# Compute the observed P(A and B)
+p_AB <- nrow(subset(where9am, location == "office", daytype == "weekday"))/nrow(where9am)
+
+# Compute P(A | B) and print its value
+p_A_given_B <- p_AB/p_B
+p_A_given_B
 ```
 

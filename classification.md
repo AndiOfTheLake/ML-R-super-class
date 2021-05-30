@@ -303,7 +303,7 @@ mean(k_7 == signs_actual)
 ```
 
 ```
-## [1] 0.9491525
+## [1] 0.9661017
 ```
 
 ```r
@@ -317,6 +317,8 @@ mean(k_15 == signs_actual)
 ```
 
 ## Seeing how the neighbors voted
+
+To see which predictions are close(r) to unanimous.
 
 
 ```r
@@ -342,5 +344,89 @@ head(sign_prob)
 
 ```
 ## [1] 0.5714286 0.5714286 0.8571429 0.5714286 0.8571429 0.5714286
+```
+
+## Data preparation for kNN
+
+normalization
+
+## Understanding Bayesian methods
+
+
+```r
+library(naivebayes)
+```
+
+```
+## naivebayes 0.9.7 loaded
+```
+
+## Computing probabilities
+
+
+```r
+where9am<-read.csv("where9am.csv")
+str(where9am)
+```
+
+```
+## 'data.frame':	91 obs. of  2 variables:
+##  $ daytype : chr  "weekday" "weekday" "weekday" "weekend" ...
+##  $ location: chr  "office" "office" "office" "home" ...
+```
+
+```r
+str(where9am$daytype)
+```
+
+```
+##  chr [1:91] "weekday" "weekday" "weekday" "weekend" "weekend" "weekday" ...
+```
+
+```r
+str(where9am$location)
+```
+
+```
+##  chr [1:91] "office" "office" "office" "home" "home" "campus" "home" ...
+```
+
+```r
+table(where9am$daytype)
+```
+
+```
+## 
+## weekday weekend 
+##      65      26
+```
+
+```r
+table(where9am$location)
+```
+
+```
+## 
+## appointment      campus        home      office 
+##           1          10          41          39
+```
+
+```r
+# Compute P(A) 
+p_A <- nrow(subset(where9am, location == "office"))/nrow(where9am)
+
+# Compute P(B)
+p_B <- nrow(subset(where9am, daytype == "weekday"))/nrow(where9am)
+
+# Compute the observed P(A and B)
+p_AB <- nrow(subset(where9am, location == "office", daytype == "weekday"))/nrow(where9am)
+
+# Compute P(A | B) and print its value
+p_A_given_B <- p_AB/p_B
+p_A_given_B
+```
+
+```
+## [1] 0.6
 ```
 
