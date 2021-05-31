@@ -1474,3 +1474,25 @@ write.csv(locations, "locations.csv")
 
 donors<-read.csv("donors.csv")
 dim(donors)
+
+
+## ---- loans dataset ----
+loans<-read.csv("loans.csv")
+names(loans)
+colnames(loans)[which(colnames(loans)=="keep")]<-"outcome"
+
+drops <- c("rand", "default")
+loans<-loans[ , !(names(loans) %in% drops)]
+names(loans)
+
+good_credit<-matrix(c("LOW", "10+ years", "MORTAGE", "HIGH", "major_purchase", "AVERAGE", 
+                          "HIGH", "NO", "NEVER", "MANY", "NO",
+                          "LOW", "NO"))
+
+good_credit<-as.data.frame(t(good_credit))
+good_credit
+colnames(good_credit)[]<-names(loans)[-1]
+good_credit
+class(good_credit)
+
+

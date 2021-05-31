@@ -1,7 +1,7 @@
 ---
 title: 'Supervised Learning in R: Classification'
 author: "Andi"
-Last updated: "30 May, 2021"
+Last updated: "31 May, 2021"
 output: 
   html_document: 
     keep_md: yes
@@ -331,7 +331,7 @@ mean(k_15 == signs_actual)
 ```
 
 ```
-## [1] 0.8644068
+## [1] 0.8983051
 ```
 
 ## Seeing how the neighbors voted
@@ -1045,9 +1045,354 @@ In general, Stepwise regression is not frequently used in disciplines outside of
 - The stepwise regression procedure violates some statistical assumptions (amoung them principle of marginality?)
 
 - It can result in a model that makes little sense in the real world
-press
+
+However, though stepwise regression is frowned upon, it may still be useful for building predictive models in the absence of another starting place.
+
+Building a stepwise regression model
 
 
+```r
+# Specify a null model with no predictors
+null_model <- glm(donated ~ 1, data = donors, family = "binomial")
+
+# Specify the full model using all of the potential predictors
+# NOTE the syntax "response ~ ."
+full_model <- glm(donated ~ ., data = donors, family = "binomial")
+
+# Use a forward stepwise algorithm to build a parsimonious model
+step_model <- step(null_model, scope = list(lower = null_model, upper = full_model), direction = "forward")
+```
+
+```
+## Start:  AIC=37332.13
+## donated ~ 1
+```
+
+```
+## Warning in add1.glm(fit, scope$add, scale = scale, trace = trace, k = k, : using
+## the 70916/93462 rows from a combined fit
+```
+
+```
+##                     Df Deviance   AIC
+## + frequency          1    28502 37122
+## + money              1    28621 37241
+## + wealth_rating      1    28705 37326
+## + has_children       1    28705 37326
+## + age                1    28707 37328
+## + imputed_age        1    28707 37328
+## + wealth_levels      3    28704 37328
+## + interest_veterans  1    28709 37330
+## + donation_prob      1    28710 37330
+## + donation_pred      1    28710 37330
+## + catalog_shopper    1    28710 37330
+## + pet_owner          1    28711 37331
+## <none>                    28714 37332
+## + interest_religion  1    28712 37333
+## + recency            1    28713 37333
+## + bad_address        1    28714 37334
+## + veteran            1    28714 37334
+## 
+## Step:  AIC=37024.77
+## donated ~ frequency
+```
+
+```
+## Warning in add1.glm(fit, scope$add, scale = scale, trace = trace, k = k, : using
+## the 70916/93462 rows from a combined fit
+```
+
+```
+##                     Df Deviance   AIC
+## + money              1    28441 36966
+## + wealth_rating      1    28493 37018
+## + wealth_levels      3    28490 37019
+## + has_children       1    28494 37019
+## + donation_prob      1    28498 37023
+## + interest_veterans  1    28498 37023
+## + catalog_shopper    1    28499 37024
+## + donation_pred      1    28499 37024
+## + age                1    28499 37024
+## + imputed_age        1    28499 37024
+## + pet_owner          1    28499 37024
+## <none>                    28502 37025
+## + interest_religion  1    28501 37026
+## + recency            1    28501 37026
+## + bad_address        1    28502 37026
+## + veteran            1    28502 37027
+## 
+## Step:  AIC=36949.71
+## donated ~ frequency + money
+```
+
+```
+## Warning in add1.glm(fit, scope$add, scale = scale, trace = trace, k = k, : using
+## the 70916/93462 rows from a combined fit
+```
+
+```
+##                     Df Deviance   AIC
+## + wealth_levels      3    28427 36942
+## + wealth_rating      1    28431 36942
+## + has_children       1    28432 36943
+## + interest_veterans  1    28438 36948
+## + donation_prob      1    28438 36949
+## + catalog_shopper    1    28438 36949
+## + donation_pred      1    28439 36949
+## + age                1    28439 36949
+## + imputed_age        1    28439 36949
+## + pet_owner          1    28439 36949
+## <none>                    28441 36950
+## + interest_religion  1    28440 36951
+## + recency            1    28441 36951
+## + bad_address        1    28441 36951
+## + veteran            1    28441 36952
+## 
+## Step:  AIC=36945.48
+## donated ~ frequency + money + wealth_levels
+```
+
+```
+## Warning in add1.glm(fit, scope$add, scale = scale, trace = trace, k = k, : using
+## the 70916/93462 rows from a combined fit
+```
+
+```
+##                     Df Deviance   AIC
+## + has_children       1    28416 36937
+## + age                1    28424 36944
+## + imputed_age        1    28424 36944
+## + interest_veterans  1    28424 36945
+## + donation_prob      1    28424 36945
+## + catalog_shopper    1    28425 36945
+## + donation_pred      1    28425 36945
+## <none>                    28427 36945
+## + pet_owner          1    28425 36946
+## + interest_religion  1    28426 36947
+## + recency            1    28427 36947
+## + bad_address        1    28427 36947
+## + veteran            1    28427 36947
+## 
+## Step:  AIC=36938.4
+## donated ~ frequency + money + wealth_levels + has_children
+```
+
+```
+## Warning in add1.glm(fit, scope$add, scale = scale, trace = trace, k = k, : using
+## the 70916/93462 rows from a combined fit
+```
+
+```
+##                     Df Deviance   AIC
+## + pet_owner          1    28413 36937
+## + donation_prob      1    28413 36937
+## + catalog_shopper    1    28413 36937
+## + interest_veterans  1    28413 36937
+## + donation_pred      1    28414 36938
+## <none>                    28416 36938
+## + interest_religion  1    28415 36939
+## + age                1    28416 36940
+## + imputed_age        1    28416 36940
+## + recency            1    28416 36940
+## + bad_address        1    28416 36940
+## + veteran            1    28416 36940
+## 
+## Step:  AIC=36932.25
+## donated ~ frequency + money + wealth_levels + has_children + 
+##     pet_owner
+```
+
+```
+## Warning in add1.glm(fit, scope$add, scale = scale, trace = trace, k = k, : using
+## the 70916/93462 rows from a combined fit
+```
+
+```
+##                     Df Deviance   AIC
+## <none>                    28413 36932
+## + donation_prob      1    28411 36932
+## + interest_veterans  1    28411 36932
+## + catalog_shopper    1    28412 36933
+## + donation_pred      1    28412 36933
+## + age                1    28412 36933
+## + imputed_age        1    28412 36933
+## + recency            1    28413 36934
+## + interest_religion  1    28413 36934
+## + bad_address        1    28413 36934
+## + veteran            1    28413 36934
+```
+
+```r
+# Estimate the stepwise donation probability
+step_prob <- predict(step_model, type = "response")
+
+# Plot the ROC of the stepwise model
+library(pROC)
+ROC <- roc(donors$donated, step_prob)
+```
+
+```
+## Setting levels: control = 0, case = 1
+```
+
+```
+## Setting direction: controls < cases
+```
+
+```r
+plot(ROC, col = "red")
+```
+
+![](classification_files/figure-html/unnamed-chunk-20-1.png)<!-- -->
+
+```r
+auc(ROC)
+```
+
+```
+## Area under the curve: 0.5849
+```
+
+## Making decisions with trees
+
+Breaking one complex decision into a series of smaller decisions
+
+## Building a simple decision tree
 
 
+```r
+# Load the rpart package
+library(rpart)
+
+loans<-read.csv("loans.csv")
+names(loans)
+colnames(loans)[which(colnames(loans)=="keep")]<-"outcome"
+
+drops <- c("rand", "default")
+loans<-loans[ , !(names(loans) %in% drops)]
+names(loans)
+
+good_credit<-matrix(c("LOW", "10+ years", "MORTAGE", "HIGH", "major_purchase", "AVERAGE", 
+                          "HIGH", "NO", "NEVER", "MANY", "NO",
+                          "LOW", "NO"))
+
+good_credit<-as.data.frame(t(good_credit))
+good_credit
+colnames(good_credit)[]<-names(loans)[-1]
+good_credit
+
+# Build a lending model predicting loan outcome versus loan amount and credit score
+loan_model <- rpart(outcome ~ loan_amount + credit_score, data = loans, method = "class", control = rpart.control(cp = 0))
+
+# Make a prediction for someone with good credit
+predict(loan_model, good_credit, type = "class")
+
+# Make a prediction for someone with bad credit
+# predict(loan_model, bad_credit, type = "class")
+```
+## Visualizing classification trees
+
+Our dataset is different from the one in Data Camp. Their `loans` dataset is not availlable. From now on we will only include the (non-executable) code.
+
+
+```r
+# Examine the loan_model object
+loan_model
+
+# Load the rpart.plot package
+library(rpart.plot)
+
+# Plot the loan_model with default settings
+rpart.plot(loan_model)
+
+# Plot the loan_model with customized settings
+rpart.plot(loan_model, type = 3, box.palette = c("red", "green"), fallen.leaves = TRUE)
+```
+## Building a larger decision tree
+
+Given a dataset to divide-and-conquer, which groups would the algorithm prioritize to split first?
+
+- The group it can split to create the greatest improvement in subgroup homogeneity
+
+## Creating random test datasets
+
+train: 75%
+test: 25%
+
+
+```r
+# Determine the number of rows for training
+nrow(loans)
+
+# Create a random sample of row IDs
+n<-nrow(loans)
+sample_rows <- sample(n, 0.75*n)
+
+# Create the training dataset
+loans_train <- loans[sample_rows, ]
+
+# Create the test dataset
+loans_test <- loans[!(seq(1:n)%in% sample_rows), ]
+```
+
+## Building and evaluating a larger tree
+
+
+```r
+# Grow a tree using all of the available applicant data
+loan_model <- rpart(outcome ~ ., data = loans_train, method = "class", control = rpart.control(cp = 0))
+
+# Make predictions on the test dataset
+loans_test$pred <- predict(loan_model, newdata = loans_test, type = "class")
+
+# Examine the confusion matrix
+table(loans_test$pred, loans_test$outcome)
+
+# Compute the accuracy on the test dataset
+mean(loans_test$pred == loans_test$outcome)
+```
+
+## Tending to classification trees
+
+## Preventing overgrown trees
+
+## Pre-pruning
+
+```r
+# Grow a tree with maxdepth of 6
+loan_model <- rpart(outcome ~ ., data = loans_train, method = "class", control = rpart.control(cp = 0, maxdepth = 6))
+
+# Make a class prediction on the test set
+loans_test$pred <- predict(loan_model, newdata = loans_test, type = "class")
+
+# Compute the accuracy of the simpler tree
+mean(loans_test$pred == loans_test$outcome)
+
+# Swap maxdepth for a minimum split of 500 
+loan_model <- rpart(outcome ~ ., data = loans_train, method = "class", control = rpart.control(cp = 0, minsplit = 500))
+
+# Run this. How does the accuracy change?
+loans_test$pred <- predict(loan_model, loans_test, type = "class")
+mean(loans_test$pred == loans_test$outcome)
+```
+
+Note: creating a simpler decision tree may actually result in greater performance on the test dataset.
+
+## post-pruning
+
+
+```r
+# Grow an overly complex tree
+loan_model <- rpart(outcome ~ ., data = loans_train, method = "class", control = rpart.control(cp = 0))
+
+# Examine the complexity plot
+plotcp(loan_model)
+
+# Prune the tree
+loan_model_pruned <- prune(loan_model, cp = 0.0014)
+
+# Compute the accuracy of the pruned tree
+loans_test$pred <- predict(loan_model_pruned, newdata = loans_test, type = "class")
+mean(loans_test$pred == loans_test$outcome)
+```
 
