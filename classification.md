@@ -1356,6 +1356,8 @@ mean(loans_test$pred == loans_test$outcome)
 
 ## Preventing overgrown trees
 
+pre-pruning and post-pruning are almost ALWAYS used 
+
 ## Pre-pruning
 
 ```r
@@ -1393,6 +1395,36 @@ loan_model_pruned <- prune(loan_model, cp = 0.0014)
 
 # Compute the accuracy of the pruned tree
 loans_test$pred <- predict(loan_model_pruned, newdata = loans_test, type = "class")
+mean(loans_test$pred == loans_test$outcome)
+```
+
+## Seeing the forest from the trees
+
+## Random forest
+
+Understanding **random forest**:
+
+Groups of classification trees can be combined into an ensemble that generates a single prediction by allowing the trees to "vote" on the outcome. This could result in more accurate predictions than a single tree because the diversity among the trees may lead it to discover more subtle patterns--the teamwork-based approach of the random forest may help it find important trends a single tree may miss.
+
+Principle of **ensemble method**: weaker learners become stronger with team work. 
+
+## Building a random forest model
+
+In spite of the fact that a forest can contain hundreds of trees, growing a decision tree forest is perhaps even easier than creating a single highly-tuned tree.
+
+
+```r
+set.seed(531) # because the forest is random
+library(randomForest)
+
+# Load the randomForest package
+library(randomForest)
+
+# Build a random forest model
+loan_model <- randomForest(outcome ~ ., data = loans_train)
+
+# Compute the accuracy of the random forest
+loans_test$pred <- predict(loan_model, loans_test)
 mean(loans_test$pred == loans_test$outcome)
 ```
 
