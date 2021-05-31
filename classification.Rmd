@@ -15,6 +15,7 @@ knitr::opts_chunk$set(echo = TRUE)
 # {r, echo = FALSE, results='hide'}
 # if we used both 'echo=TRUE' and 'results=hide' the pipe would not work properly
 # if we used 'echo = FALSE' and 'results=hide' we would have only messages (i.e. attaching package) If we don't want them we set 'error = FALSE', 'warning = FALSE', and 'message = FALSE'.
+library(dplyr)
 ```
 
 Supervised learning: train a machine to learn from prior examples. When the concept to be learned.
@@ -148,5 +149,240 @@ p_AB <- nrow(subset(where9am, location == "office", daytype == "weekday"))/nrow(
 # Compute P(A | B) and print its value
 p_A_given_B <- p_AB/p_B
 p_A_given_B
+```
+
+## A simple Naive Bayes location model
+
+```{r}
+# Build the location prediction model
+locmodel <- naive_bayes(location ~ daytype, data = where9am)
+
+# Predict Thursday's 9am location
+# First create "newdata"
+thursday9am<-factor(c("weekday"), levels = c("weekday", "weekend")) %>% data.frame()
+names(thursday9am)<-"daytype"; thursday9am
+
+predict(locmodel, newdata = thursday9am)
+
+# Predict Saturdays's 9am location
+saturday9am<-factor(c("weekend"), levels = c("weekday", "weekend")) %>% data.frame()
+names(saturday9am)<-"daytype"; saturday9am
+
+predict(locmodel, newdata = saturday9am)
+```
+
+## Examining "raw" probabilities
+
+```{r}
+# The 'naivebayes' package is loaded into the workspace
+# and the Naive Bayes 'locmodel' has been built
+
+# Examine the location prediction model
+locmodel
+
+# Obtain the predicted probabilities for Thursday at 9am
+predict(locmodel, thursday9am , type = "prob")
+
+# Obtain the predicted probabilities for Saturday at 9am
+predict(locmodel, saturday9am , type = "prob")
+```
+
+## Understanding NB's "naivety"
+
+```{r}
+locations<-read.csv("locations.csv")
+head(locations)
+
+# The 'naivebayes' package is loaded into the workspace already
+
+# Build a NB model of location
+locmodel <- naive_bayes(location ~ daytype + hourtype, 
+data = locations)
+
+# Predict Brett's location on a weekday afternoon
+weekday_afternoon <- locations[13,]
+predict(locmodel, newdata = weekday_afternoon)
+
+# Predict Brett's location on a weekday evening
+weekday_evening <- locations[19,]
+predict(locmodel, newdata = weekday_evening)
+```
+
+## Preparing for unforeseen circumstances
+
+```{r}
+# The 'naivebayes' package is loaded into the workspace already
+# The Naive Bayes location model (locmodel) has already been built
+
+# Observe the predicted probabilities for a weekend afternoon
+weekend_afternoon<-locations[85,]
+predict(locmodel, newdata = weekend_afternoon, type = "prob")
+
+# Build a new model using the Laplace correction
+locmodel2 <- naive_bayes(location ~ daytype + hourtype, data = locations, laplace = 1)
+
+# Observe the new predicted probabilities for a weekend afternoon
+predict(locmodel2, newdata = weekend_afternoon, type = "prob")
+```
+
+## Making binary predictions with regression
+
+## Building simple logistic regression models
+
+```{r}
+donors<-read.csv("donors.csv")
+dim(donors)
+head(donors)
+
+# Examine the dataset to identify potential independent variables
+str(donors)
+
+# Explore the dependent variable
+table(donors$donated)
+
+# Build the donation model
+donation_model <- glm(donated ~ bad_address 
++ interest_religion + interest_veterans, 
+                      data = donors, family = "binomial")
+
+# Summarize the model results
+summary(donation_model)
+```
+
+## Making a binary prediction
+
+```{r}
+# Estimate the donation probability
+donors$donation_prob <- predict(donation_model, type = "response")
+
+# Find the donation probability of the average prospect
+mean(donors$donated)
+
+# Predict a donation if probability of donation is greater than average (0.0504)
+donors$donation_pred <- ifelse(donors$donation_prob > 0.0504, 1, 0)
+
+# Calculate the model's accuracy
+mean(donors$donation_pred == donors$donated)
+
+# Note: notice that mean(donors$donated) = mean(donors$donation_prob). Think why.
+mean(donors$donation_prob)
+```
+
+## The limitations of accuracy
+
+In the previous exercise, you found that the logistic regression model made a correct prediction nearly 80% of the time. Despite this relatively high accuracy, the result is misleading due to the rarity of outcome being predicted.
+
+The `donors` dataset is available in your workspace. What would the accuracy have been if a model had simply predicted "no donation" for each person?
+
+```{r}
+1 - sum(donors$donated)/length(donors$donated)
+```
+
+With an accuracy of only 80%, the model is actually performing WORSE than if it were to predict non-donor for every record. This example shows that accuracy is a very misleading measure of model performance on imbalanced datasets
+
+## Model performance tradeoffs
+
+## Calculating ROC Curves and AUC
+
+```{r}
+# Load the pROC package
+library(pROC)
+
+# Create a ROC curve
+ROC <- roc(donors$donated, donors$donation_prob)
+
+# Plot the ROC curve
+plot(ROC, col = "blue")
+
+# Calculate the area under the curve (AUC)
+auc(ROC)
+```
+
+## Dummy variables, missing data, and interactions
+
+## Coding categorical features
+
+```{r}
+# Convert the wealth rating to a factor
+donors$wealth_levels <- factor(donors$wealth_rating, levels = c(0, 1, 2, 3), labels = c("Unknown", "Low", "Medium", "High"))
+
+# Use relevel() to change reference category
+donors$wealth_levels <- relevel(donors$wealth_levels, ref = "Medium")
+
+# See how our factor coding impacts the model
+summary(glm(donated ~ wealth_levels, data = donors, family = "binomial"))
+```
+
+## Handling missing data
+
+```{r}
+# Find the average age among non-missing values
+summary(donors$age)
+
+# Impute missing age values with the mean age
+donors$imputed_age <- ifelse(is.na(donors$age), round(mean(donors$age, na.rm = TRUE),2), donors$age)
+
+# Create missing value indicator for age
+donors$missing_age <- ifelse(is.na(donors$age), 1, 0)
+```
+
+## Building a more sophisticated model
+
+```{r}
+# Build a recency, frequency, and money (RFM) model
+rfm_model <- glm(donated ~ money + recency * frequency, data = donors, family = "binomial")
+
+# Summarize the RFM model to see how the parameters were coded
+summary(rfm_model)
+
+# Compute predicted probabilities for the RFM model
+rfm_prob <- predict(rfm_model, type = "response")
+
+# Plot the ROC curve and find AUC for the new model
+library(pROC)
+ROC <- roc(donors$donated, rfm_prob)
+plot(ROC, col = "red")
+auc(ROC)
+```
+
+## Automatic feature selection
+
+- e.g. backward elimination and forward selection
+
+- allows a model to be built in the absence of common sense
+
+- in the predictive model setting, the meaning / interpretation of the model is of secondary importance
+
+In general, Stepwise regression is not frequently used in disciplines outside of machine learning because
+
+- It is not guaranteed to find the best possible model
+
+- The stepwise regression procedure violates some statistical assumptions (amoung them principle of marginality?)
+
+- It can result in a model that makes little sense in the real world
+
+However, though stepwise regression is frowned upon, it may still be useful for building predictive models in the absence of another starting place.
+
+Building a stepwise regression model
+
+```{r}
+# Specify a null model with no predictors
+null_model <- glm(donated ~ 1, data = donors, family = "binomial")
+
+# Specify the full model using all of the potential predictors
+# NOTE the syntax "response ~ ."
+full_model <- glm(donated ~ ., data = donors, family = "binomial")
+
+# Use a forward stepwise algorithm to build a parsimonious model
+step_model <- step(null_model, scope = list(lower = null_model, upper = full_model), direction = "forward")
+
+# Estimate the stepwise donation probability
+step_prob <- predict(step_model, type = "response")
+
+# Plot the ROC of the stepwise model
+library(pROC)
+ROC <- roc(donors$donated, step_prob)
+plot(ROC, col = "red")
+auc(ROC)
 ```
 

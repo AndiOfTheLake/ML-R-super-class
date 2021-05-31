@@ -14,6 +14,24 @@ output:
 # {r, echo = FALSE, results='hide'}
 # if we used both 'echo=TRUE' and 'results=hide' the pipe would not work properly
 # if we used 'echo = FALSE' and 'results=hide' we would have only messages (i.e. attaching package) If we don't want them we set 'error = FALSE', 'warning = FALSE', and 'message = FALSE'.
+library(dplyr)
+```
+
+```
+## 
+## Attaching package: 'dplyr'
+```
+
+```
+## The following objects are masked from 'package:stats':
+## 
+##     filter, lag
+```
+
+```
+## The following objects are masked from 'package:base':
+## 
+##     intersect, setdiff, setequal, union
 ```
 
 Supervised learning: train a machine to learn from prior examples. When the concept to be learned.
@@ -303,7 +321,7 @@ mean(k_7 == signs_actual)
 ```
 
 ```
-## [1] 0.9661017
+## [1] 0.9491525
 ```
 
 ```r
@@ -313,7 +331,7 @@ mean(k_15 == signs_actual)
 ```
 
 ```
-## [1] 0.8813559
+## [1] 0.8644068
 ```
 
 ## Seeing how the neighbors voted
@@ -429,4 +447,607 @@ p_A_given_B
 ```
 ## [1] 0.6
 ```
+
+## A simple Naive Bayes location model
+
+
+```r
+# Build the location prediction model
+locmodel <- naive_bayes(location ~ daytype, data = where9am)
+```
+
+```
+## Warning: naive_bayes(): Feature daytype - zero probabilities are present.
+## Consider Laplace smoothing.
+```
+
+```r
+# Predict Thursday's 9am location
+# First create "newdata"
+thursday9am<-factor(c("weekday"), levels = c("weekday", "weekend")) %>% data.frame()
+names(thursday9am)<-"daytype"; thursday9am
+```
+
+```
+##   daytype
+## 1 weekday
+```
+
+```r
+predict(locmodel, newdata = thursday9am)
+```
+
+```
+## [1] office
+## Levels: appointment campus home office
+```
+
+```r
+# Predict Saturdays's 9am location
+saturday9am<-factor(c("weekend"), levels = c("weekday", "weekend")) %>% data.frame()
+names(saturday9am)<-"daytype"; saturday9am
+```
+
+```
+##   daytype
+## 1 weekend
+```
+
+```r
+predict(locmodel, newdata = saturday9am)
+```
+
+```
+## [1] home
+## Levels: appointment campus home office
+```
+
+## Examining "raw" probabilities
+
+
+```r
+# The 'naivebayes' package is loaded into the workspace
+# and the Naive Bayes 'locmodel' has been built
+
+# Examine the location prediction model
+locmodel
+```
+
+```
+## 
+## ================================== Naive Bayes ================================== 
+##  
+##  Call: 
+## naive_bayes.formula(formula = location ~ daytype, data = where9am)
+## 
+## --------------------------------------------------------------------------------- 
+##  
+## Laplace smoothing: 0
+## 
+## --------------------------------------------------------------------------------- 
+##  
+##  A priori probabilities: 
+## 
+## appointment      campus        home      office 
+##  0.01098901  0.10989011  0.45054945  0.42857143 
+## 
+## --------------------------------------------------------------------------------- 
+##  
+##  Tables: 
+## 
+## --------------------------------------------------------------------------------- 
+##  ::: daytype (Bernoulli) 
+## --------------------------------------------------------------------------------- 
+##          
+## daytype   appointment    campus      home    office
+##   weekday   1.0000000 1.0000000 0.3658537 1.0000000
+##   weekend   0.0000000 0.0000000 0.6341463 0.0000000
+## 
+## ---------------------------------------------------------------------------------
+```
+
+```r
+# Obtain the predicted probabilities for Thursday at 9am
+predict(locmodel, thursday9am , type = "prob")
+```
+
+```
+##      appointment    campus      home office
+## [1,]  0.01538462 0.1538462 0.2307692    0.6
+```
+
+```r
+# Obtain the predicted probabilities for Saturday at 9am
+predict(locmodel, saturday9am , type = "prob")
+```
+
+```
+##       appointment       campus      home      office
+## [1,] 3.838772e-05 0.0003838772 0.9980806 0.001497121
+```
+
+## Understanding NB's "naivety"
+
+
+```r
+locations<-read.csv("locations.csv")
+head(locations)
+```
+
+```
+##   X daytype hourtype location
+## 1 1 weekday    night     home
+## 2 2 weekday    night     home
+## 3 3 weekday    night     home
+## 4 4 weekday    night     home
+## 5 5 weekday    night     home
+## 6 6 weekday    night     home
+```
+
+```r
+# The 'naivebayes' package is loaded into the workspace already
+
+# Build a NB model of location
+locmodel <- naive_bayes(location ~ daytype + hourtype, 
+data = locations)
+```
+
+```
+## Warning: naive_bayes(): Feature daytype - zero probabilities are present.
+## Consider Laplace smoothing.
+```
+
+```
+## Warning: naive_bayes(): Feature hourtype - zero probabilities are present.
+## Consider Laplace smoothing.
+```
+
+```r
+# Predict Brett's location on a weekday afternoon
+weekday_afternoon <- locations[13,]
+predict(locmodel, newdata = weekday_afternoon)
+```
+
+```
+## Warning: predict.naive_bayes(): more features in the newdata are provided as
+## there are probability tables in the object. Calculation is performed based on
+## features to be found in the tables.
+```
+
+```
+## [1] office
+## Levels: appointment campus home office restaurant store theater
+```
+
+```r
+# Predict Brett's location on a weekday evening
+weekday_evening <- locations[19,]
+predict(locmodel, newdata = weekday_evening)
+```
+
+```
+## Warning: predict.naive_bayes(): more features in the newdata are provided as
+## there are probability tables in the object. Calculation is performed based on
+## features to be found in the tables.
+```
+
+```
+## [1] home
+## Levels: appointment campus home office restaurant store theater
+```
+
+## Preparing for unforeseen circumstances
+
+
+```r
+# The 'naivebayes' package is loaded into the workspace already
+# The Naive Bayes location model (locmodel) has already been built
+
+# Observe the predicted probabilities for a weekend afternoon
+weekend_afternoon<-locations[85,]
+predict(locmodel, newdata = weekend_afternoon, type = "prob")
+```
+
+```
+## Warning: predict.naive_bayes(): more features in the newdata are provided as
+## there are probability tables in the object. Calculation is performed based on
+## features to be found in the tables.
+```
+
+```
+##      appointment       campus      home      office restaurant      store
+## [1,]  0.02462883 0.0004802622 0.8439145 0.003349521  0.1111338 0.01641922
+##          theater
+## [1,] 7.38865e-05
+```
+
+```r
+# Build a new model using the Laplace correction
+locmodel2 <- naive_bayes(location ~ daytype + hourtype, data = locations, laplace = 1)
+
+# Observe the new predicted probabilities for a weekend afternoon
+predict(locmodel2, newdata = weekend_afternoon, type = "prob")
+```
+
+```
+## Warning: predict.naive_bayes(): more features in the newdata are provided as
+## there are probability tables in the object. Calculation is performed based on
+## features to be found in the tables.
+```
+
+```
+##      appointment      campus      home      office restaurant      store
+## [1,]  0.02013872 0.006187715 0.8308154 0.007929249  0.1098743 0.01871085
+##          theater
+## [1,] 0.006343697
+```
+
+## Making binary predictions with regression
+
+## Building simple logistic regression models
+
+
+```r
+donors<-read.csv("donors.csv")
+dim(donors)
+```
+
+```
+## [1] 93462    13
+```
+
+```r
+head(donors)
+```
+
+```
+##   donated veteran bad_address age has_children wealth_rating interest_veterans
+## 1       0       0           0  60            0             0                 0
+## 2       0       0           0  46            1             3                 0
+## 3       0       0           0  NA            0             1                 0
+## 4       0       0           0  70            0             2                 0
+## 5       0       0           0  78            1             1                 0
+## 6       0       0           0  NA            0             0                 0
+##   interest_religion pet_owner catalog_shopper recency  frequency  money
+## 1                 0         0               0 CURRENT   FREQUENT MEDIUM
+## 2                 0         0               0 CURRENT   FREQUENT   HIGH
+## 3                 0         0               0 CURRENT   FREQUENT MEDIUM
+## 4                 0         0               0 CURRENT   FREQUENT MEDIUM
+## 5                 1         0               1 CURRENT   FREQUENT MEDIUM
+## 6                 0         0               0 CURRENT INFREQUENT MEDIUM
+```
+
+```r
+# Examine the dataset to identify potential independent variables
+str(donors)
+```
+
+```
+## 'data.frame':	93462 obs. of  13 variables:
+##  $ donated          : int  0 0 0 0 0 0 0 0 0 0 ...
+##  $ veteran          : int  0 0 0 0 0 0 0 0 0 0 ...
+##  $ bad_address      : int  0 0 0 0 0 0 0 0 0 0 ...
+##  $ age              : int  60 46 NA 70 78 NA 38 NA NA 65 ...
+##  $ has_children     : int  0 1 0 0 1 0 1 0 0 0 ...
+##  $ wealth_rating    : int  0 3 1 2 1 0 2 3 1 0 ...
+##  $ interest_veterans: int  0 0 0 0 0 0 0 0 0 0 ...
+##  $ interest_religion: int  0 0 0 0 1 0 0 0 0 0 ...
+##  $ pet_owner        : int  0 0 0 0 0 0 1 0 0 0 ...
+##  $ catalog_shopper  : int  0 0 0 0 1 0 0 0 0 0 ...
+##  $ recency          : chr  "CURRENT" "CURRENT" "CURRENT" "CURRENT" ...
+##  $ frequency        : chr  "FREQUENT" "FREQUENT" "FREQUENT" "FREQUENT" ...
+##  $ money            : chr  "MEDIUM" "HIGH" "MEDIUM" "MEDIUM" ...
+```
+
+```r
+# Explore the dependent variable
+table(donors$donated)
+```
+
+```
+## 
+##     0     1 
+## 88751  4711
+```
+
+```r
+# Build the donation model
+donation_model <- glm(donated ~ bad_address 
++ interest_religion + interest_veterans, 
+                      data = donors, family = "binomial")
+
+# Summarize the model results
+summary(donation_model)
+```
+
+```
+## 
+## Call:
+## glm(formula = donated ~ bad_address + interest_religion + interest_veterans, 
+##     family = "binomial", data = donors)
+## 
+## Deviance Residuals: 
+##     Min       1Q   Median       3Q      Max  
+## -0.3480  -0.3192  -0.3192  -0.3192   2.5678  
+## 
+## Coefficients:
+##                   Estimate Std. Error  z value Pr(>|z|)    
+## (Intercept)       -2.95139    0.01652 -178.664   <2e-16 ***
+## bad_address       -0.30780    0.14348   -2.145   0.0319 *  
+## interest_religion  0.06724    0.05069    1.327   0.1847    
+## interest_veterans  0.11009    0.04676    2.354   0.0186 *  
+## ---
+## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+## 
+## (Dispersion parameter for binomial family taken to be 1)
+## 
+##     Null deviance: 37330  on 93461  degrees of freedom
+## Residual deviance: 37316  on 93458  degrees of freedom
+## AIC: 37324
+## 
+## Number of Fisher Scoring iterations: 5
+```
+
+## Making a binary prediction
+
+
+```r
+# Estimate the donation probability
+donors$donation_prob <- predict(donation_model, type = "response")
+
+# Find the donation probability of the average prospect
+mean(donors$donated)
+```
+
+```
+## [1] 0.05040551
+```
+
+```r
+# Predict a donation if probability of donation is greater than average (0.0504)
+donors$donation_pred <- ifelse(donors$donation_prob > 0.0504, 1, 0)
+
+# Calculate the model's accuracy
+mean(donors$donation_pred == donors$donated)
+```
+
+```
+## [1] 0.794815
+```
+
+```r
+# Note: notice that mean(donors$donated) = mean(donors$donation_prob). Think why.
+mean(donors$donation_prob)
+```
+
+```
+## [1] 0.05040551
+```
+
+## The limitations of accuracy
+
+In the previous exercise, you found that the logistic regression model made a correct prediction nearly 80% of the time. Despite this relatively high accuracy, the result is misleading due to the rarity of outcome being predicted.
+
+The `donors` dataset is available in your workspace. What would the accuracy have been if a model had simply predicted "no donation" for each person?
+
+
+```r
+1 - sum(donors$donated)/length(donors$donated)
+```
+
+```
+## [1] 0.9495945
+```
+
+With an accuracy of only 80%, the model is actually performing WORSE than if it were to predict non-donor for every record. This example shows that accuracy is a very misleading measure of model performance on imbalanced datasets
+
+## Model performance tradeoffs
+
+## Calculating ROC Curves and AUC
+
+
+```r
+# Load the pROC package
+library(pROC)
+```
+
+```
+## Type 'citation("pROC")' for a citation.
+```
+
+```
+## 
+## Attaching package: 'pROC'
+```
+
+```
+## The following objects are masked from 'package:stats':
+## 
+##     cov, smooth, var
+```
+
+```r
+# Create a ROC curve
+ROC <- roc(donors$donated, donors$donation_prob)
+```
+
+```
+## Setting levels: control = 0, case = 1
+```
+
+```
+## Setting direction: controls < cases
+```
+
+```r
+# Plot the ROC curve
+plot(ROC, col = "blue")
+```
+
+![](classification_files/figure-html/unnamed-chunk-16-1.png)<!-- -->
+
+```r
+# Calculate the area under the curve (AUC)
+auc(ROC)
+```
+
+```
+## Area under the curve: 0.5102
+```
+
+## Dummy variables, missing data, and interactions
+
+## Coding categorical features
+
+
+```r
+# Convert the wealth rating to a factor
+donors$wealth_levels <- factor(donors$wealth_rating, levels = c(0, 1, 2, 3), labels = c("Unknown", "Low", "Medium", "High"))
+
+# Use relevel() to change reference category
+donors$wealth_levels <- relevel(donors$wealth_levels, ref = "Medium")
+
+# See how our factor coding impacts the model
+summary(glm(donated ~ wealth_levels, data = donors, family = "binomial"))
+```
+
+```
+## 
+## Call:
+## glm(formula = donated ~ wealth_levels, family = "binomial", data = donors)
+## 
+## Deviance Residuals: 
+##     Min       1Q   Median       3Q      Max  
+## -0.3320  -0.3243  -0.3175  -0.3175   2.4582  
+## 
+## Coefficients:
+##                      Estimate Std. Error z value Pr(>|z|)    
+## (Intercept)          -2.91894    0.03614 -80.772   <2e-16 ***
+## wealth_levelsUnknown -0.04373    0.04243  -1.031    0.303    
+## wealth_levelsLow     -0.05245    0.05332  -0.984    0.325    
+## wealth_levelsHigh     0.04804    0.04768   1.008    0.314    
+## ---
+## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+## 
+## (Dispersion parameter for binomial family taken to be 1)
+## 
+##     Null deviance: 37330  on 93461  degrees of freedom
+## Residual deviance: 37323  on 93458  degrees of freedom
+## AIC: 37331
+## 
+## Number of Fisher Scoring iterations: 5
+```
+
+## Handling missing data
+
+
+```r
+# Find the average age among non-missing values
+summary(donors$age)
+```
+
+```
+##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
+##    1.00   48.00   62.00   61.65   75.00   98.00   22546
+```
+
+```r
+# Impute missing age values with the mean age
+donors$imputed_age <- ifelse(is.na(donors$age), round(mean(donors$age, na.rm = TRUE),2), donors$age)
+
+# Create missing value indicator for age
+donors$missing_age <- ifelse(is.na(donors$age), 1, 0)
+```
+
+## Building a more sophisticated model
+
+
+```r
+# Build a recency, frequency, and money (RFM) model
+rfm_model <- glm(donated ~ money + recency * frequency, data = donors, family = "binomial")
+
+# Summarize the RFM model to see how the parameters were coded
+summary(rfm_model)
+```
+
+```
+## 
+## Call:
+## glm(formula = donated ~ money + recency * frequency, family = "binomial", 
+##     data = donors)
+## 
+## Deviance Residuals: 
+##     Min       1Q   Median       3Q      Max  
+## -0.3696  -0.3696  -0.2895  -0.2895   2.7924  
+## 
+## Coefficients:
+##                                   Estimate Std. Error z value Pr(>|z|)    
+## (Intercept)                       -3.01142    0.04279 -70.375   <2e-16 ***
+## moneyMEDIUM                        0.36186    0.04300   8.415   <2e-16 ***
+## recencyLAPSED                     -0.86677    0.41434  -2.092   0.0364 *  
+## frequencyINFREQUENT               -0.50148    0.03107 -16.143   <2e-16 ***
+## recencyLAPSED:frequencyINFREQUENT  1.01787    0.51713   1.968   0.0490 *  
+## ---
+## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+## 
+## (Dispersion parameter for binomial family taken to be 1)
+## 
+##     Null deviance: 37330  on 93461  degrees of freedom
+## Residual deviance: 36938  on 93457  degrees of freedom
+## AIC: 36948
+## 
+## Number of Fisher Scoring iterations: 6
+```
+
+```r
+# Compute predicted probabilities for the RFM model
+rfm_prob <- predict(rfm_model, type = "response")
+
+# Plot the ROC curve and find AUC for the new model
+library(pROC)
+ROC <- roc(donors$donated, rfm_prob)
+```
+
+```
+## Setting levels: control = 0, case = 1
+```
+
+```
+## Setting direction: controls < cases
+```
+
+```r
+plot(ROC, col = "red")
+```
+
+![](classification_files/figure-html/unnamed-chunk-19-1.png)<!-- -->
+
+```r
+auc(ROC)
+```
+
+```
+## Area under the curve: 0.5785
+```
+
+## Automatic feature selection
+
+- e.g. backward elimination and forward selection
+
+- allows a model to be built in the absence of common sense
+
+- in the predictive model setting, the meaning / interpretation of the model is of secondary importance
+
+In general, Stepwise regression is not frequently used in disciplines outside of machine learning because
+
+- It is not guaranteed to find the best possible model
+
+- The stepwise regression procedure violates some statistical assumptions (amoung them principle of marginality?)
+
+- It can result in a model that makes little sense in the real world
+press
+
+
+
+
 
