@@ -321,7 +321,7 @@ mean(k_7 == signs_actual)
 ```
 
 ```
-## [1] 0.9491525
+## [1] 0.9661017
 ```
 
 ```r
@@ -331,7 +331,7 @@ mean(k_15 == signs_actual)
 ```
 
 ```
-## [1] 0.8983051
+## [1] 0.8813559
 ```
 
 ## Seeing how the neighbors voted
@@ -1421,10 +1421,10 @@ library(randomForest)
 library(randomForest)
 
 # Build a random forest model
-loan_model <- randomForest(outcome ~ ., data = loans_train)
+loan_model <- randomForest(outcome ~. , data = loans_train)
 
 # Compute the accuracy of the random forest
-loans_test$pred <- predict(loan_model, loans_test)
+loans_test$pred <- predict(loan_model, newdata = loans_test)
 mean(loans_test$pred == loans_test$outcome)
 ```
 
